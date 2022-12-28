@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<a href="/logout/"><input type="button" value="logout"></a><br><br>
+<input name="msg" id="msg">
+
+<a href="#"><button id="snd">send</button></a>
+<div class="chat" id="cht">
+    {% if get_data %}
+    {% for data in get_data %}
+    {{ data.user.username }} : {{ data.msg }} <br>
+    {% endfor %}
+    {% endif %}
+
+</div>
+
+<script>
+
+    var connection = false;
+    const ws = new WebSocket('ws://localhost:8000/ws/chat/');
+    let roomname = "chatting";
+
+
+
+    ws.addEventListener('open', ()=>{
+        console.log("connected from js");
+        connection = true;
+        //to send data from js to consumers.py
+        ws.send(JSON.stringify({
+        'command':'open',
+        'roomname':roomname
+    }));
+
+    })
+
+    var btn = document.getElementById("snd");
+    btn.addEventListener('click',() => {
+        var message = document.getElementById("msg").value;
+        console.log("{{ user }}:" + message);
+
+        ws.send(JSON.stringify({
+            'command':'send',
+            'user':'{{ user }}',
+            'roomname':roomname,
+            'message':message
+        }))
+   })
+
+   ws.onmessage = (e) => {
+       console.log(e);
+       var get_box = document.getElementById("cht");
+       var data1 = JSON.parse(e.data);
+       get_box.innerHTML += `${data1.user} : ${data1.message}<br>`;
+   }
+
+</script>
+{% endblock %}
